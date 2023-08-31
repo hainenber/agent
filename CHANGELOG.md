@@ -20,6 +20,10 @@ Main (unreleased)
 - Flow: allow the HTTP server to be configured with TLS in the config file
   using the new `http` config block. (@rfratto)
 
+- New Grafana Agent Flow components:
+
+  - `discovery.triton` discovers scrape targets from Triton Container Monitor. (@erikbaranowski)
+
 ### Other changes
 
 - Use Go 1.21.0 for builds. (@rfratto)
