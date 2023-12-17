@@ -79,6 +79,8 @@ Main (unreleased)
 
 - Add staleness tracking to labelstore to reduce memory usage. (@mattdurham)
 
+- Fix inconsistently formatted agent logs. (@hainenber)
+
 ### Other changes
 
 - Bump github.com/IBM/sarama from v1.41.2 to v1.42.1

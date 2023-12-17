@@ -174,8 +174,6 @@ func (fr *flowRun) Run(configPath string) error {
 	// injected.
 	otel.SetTracerProvider(t)
 
-	level.Info(l).Log("boringcrypto enabled", boringcrypto.Enabled)
-
 	// Immediately start the tracer.
 	go func() {
 		err := t.Run(ctx)
@@ -288,20 +286,6 @@ func (fr *flowRun) Run(configPath string) error {
 		}()
 	}
 
-	// Report usage of enabled components
-	if !fr.disableReporting {
-		reporter, err := usagestats.NewReporter(l)
-		if err != nil {
-			return fmt.Errorf("failed to create reporter: %w", err)
-		}
-		go func() {
-			err := reporter.Start(ctx, getEnabledComponentsFunc(f))
-			if err != nil {
-				level.Error(l).Log("msg", "failed to start reporter", "err", err)
-			}
-		}()
-	}
-
 	// Perform the initial reload. This is done after starting the HTTP server so
 	// that /metric and pprof endpoints are available while the Flow controller
 	// is loading.
@@ -323,6 +307,22 @@ func (fr *flowRun) Run(configPath string) error {
 
 		// Exit if the initial load fails.
 		return err
+	}
+
+	level.Info(l).Log("boringcrypto enabled", boringcrypto.Enabled)
+
+	// Report usage of enabled components
+	if !fr.disableReporting {
+		reporter, err := usagestats.NewReporter(l)
+		if err != nil {
+			return fmt.Errorf("failed to create reporter: %w", err)
+		}
+		go func() {
+			err := reporter.Start(ctx, getEnabledComponentsFunc(f))
+			if err != nil {
+				level.Error(l).Log("msg", "failed to start reporter", "err", err)
+			}
+		}()
 	}
 
 	// By now, have either joined or started a new cluster.
