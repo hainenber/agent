@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/grafana/agent/component"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/service"
 	http_service "github.com/grafana/agent/service/http"
 	"github.com/grafana/ckit"
@@ -215,7 +215,7 @@ func (s *Service) Run(ctx context.Context, host service.Host) error {
 		for i, p := range peers {
 			names[i] = p.Name
 		}
-		level.Info(s.log).Log("msg", "peers changed", "new_peers", strings.Join(names, ","))
+		buffer.Logger.LogInfo(s.log, "msg", "peers changed", "new_peers", strings.Join(names, ","))
 
 		// Notify all components about the clustering change.
 		components := component.GetAllComponents(host, component.InfoOptions{})
@@ -247,11 +247,11 @@ func (s *Service) Run(ctx context.Context, host service.Host) error {
 		return fmt.Errorf("failed to get peers to join: %w", err)
 	}
 
-	level.Info(s.log).Log("msg", "starting cluster node", "peers", strings.Join(peers, ","),
+	buffer.Logger.LogInfo(s.log, "msg", "starting cluster node", "peers", strings.Join(peers, ","),
 		"advertise_addr", s.opts.AdvertiseAddress)
 
 	if err := s.node.Start(peers); err != nil {
-		level.Warn(s.log).Log("msg", "failed to connect to peers; bootstrapping a new cluster", "err", err)
+		buffer.Logger.LogWarn(s.log, "msg", "failed to connect to peers; bootstrapping a new cluster", "err", err)
 
 		err := s.node.Start(nil)
 		if err != nil {
@@ -276,13 +276,13 @@ func (s *Service) Run(ctx context.Context, host service.Host) error {
 				case <-t.C:
 					peers, err := s.getPeers()
 					if err != nil {
-						level.Warn(s.log).Log("msg", "failed to refresh list of peers", "err", err)
+						buffer.Logger.LogWarn(s.log, "msg", "failed to refresh list of peers", "err", err)
 						continue
 					}
 
-					level.Info(s.log).Log("msg", "rejoining peers", "peers", strings.Join(peers, ","))
+					buffer.Logger.LogInfo(s.log, "msg", "rejoining peers", "peers", strings.Join(peers, ","))
 					if err := s.node.Start(peers); err != nil {
-						level.Error(s.log).Log("msg", "failed to rejoin list of peers", "err", err)
+						buffer.Logger.LogError(s.log, "msg", "failed to rejoin list of peers", "err", err)
 						continue
 					}
 				}
@@ -326,11 +326,11 @@ func (s *Service) stop() {
 	// TODO(rfratto): should we enter terminating state earlier to allow for
 	// some kind of hand-off between components?
 	if err := s.node.ChangeState(ctx, peer.StateTerminating); err != nil {
-		level.Error(s.log).Log("msg", "failed to change state to Terminating", "err", err)
+		buffer.Logger.LogError(s.log, "msg", "failed to change state to Terminating", "err", err)
 	}
 
 	if err := s.node.Stop(); err != nil {
-		level.Error(s.log).Log("msg", "failed to gracefully stop node", "err", err)
+		buffer.Logger.LogError(s.log, "msg", "failed to gracefully stop node", "err", err)
 	}
 }
 

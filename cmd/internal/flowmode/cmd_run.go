@@ -22,6 +22,7 @@ import (
 	"github.com/grafana/agent/pkg/config/instrumentation"
 	"github.com/grafana/agent/pkg/flow"
 	"github.com/grafana/agent/pkg/flow/logging"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/pkg/flow/logging/level"
 	"github.com/grafana/agent/pkg/flow/tracing"
 	"github.com/grafana/agent/pkg/usagestats"
@@ -178,7 +179,7 @@ func (fr *flowRun) Run(configPath string) error {
 	go func() {
 		err := t.Run(ctx)
 		if err != nil {
-			level.Error(l).Log("msg", "running tracer returned an error", "err", err)
+			buffer.Logger.LogError(l, "msg", "running tracer returned an error", "err", err)
 		}
 	}()
 
@@ -308,6 +309,10 @@ func (fr *flowRun) Run(configPath string) error {
 		// Exit if the initial load fails.
 		return err
 	}
+
+	// Logging node has been evaluated and log format is now defined
+	buffer.Logger.HasLogFormatNow()
+	buffer.Logger.LogBuffered(l)
 
 	level.Info(l).Log("boringcrypto enabled", boringcrypto.Enabled)
 

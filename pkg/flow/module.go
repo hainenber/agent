@@ -10,7 +10,7 @@ import (
 	"github.com/grafana/agent/pkg/flow/internal/controller"
 	"github.com/grafana/agent/pkg/flow/internal/worker"
 	"github.com/grafana/agent/pkg/flow/logging"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/pkg/flow/tracing"
 	"github.com/grafana/river/scanner"
 	"github.com/prometheus/client_golang/prometheus"
@@ -70,7 +70,7 @@ func (m *moduleController) addModule(mod *module) error {
 	m.mut.Lock()
 	defer m.mut.Unlock()
 	if err := m.o.ModuleRegistry.Register(mod.o.ID, mod); err != nil {
-		level.Error(m.o.Logger).Log("msg", "error registering module", "id", mod.o.ID, "err", err)
+		buffer.Logger.LogError(m.o.Logger, "msg", "error registering module", "id", mod.o.ID, "err", err)
 		return err
 	}
 	m.modules[mod.o.ID] = struct{}{}

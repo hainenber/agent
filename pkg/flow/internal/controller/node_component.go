@@ -15,7 +15,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/grafana/agent/component"
 	"github.com/grafana/agent/pkg/flow/logging"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/pkg/flow/tracing"
 	"github.com/grafana/river/ast"
 	"github.com/grafana/river/vm"
@@ -314,10 +314,10 @@ func (cn *ComponentNode) Run(ctx context.Context) error {
 	var exitMsg string
 	logger := cn.managedOpts.Logger
 	if err != nil {
-		level.Error(logger).Log("msg", "component exited with error", "err", err)
+		buffer.Logger.LogError(logger, "msg", "component exited with error", "err", err)
 		exitMsg = fmt.Sprintf("component shut down with error: %s", err)
 	} else {
-		level.Info(logger).Log("msg", "component exited")
+		buffer.Logger.LogError(logger, "msg", "component exited")
 		exitMsg = "component shut down normally"
 	}
 

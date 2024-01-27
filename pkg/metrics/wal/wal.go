@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/exemplar"
 	"github.com/prometheus/prometheus/model/histogram"
@@ -208,7 +209,7 @@ func (w *Storage) replayWAL() error {
 		return ErrWALClosed
 	}
 
-	level.Info(w.logger).Log("msg", "replaying WAL, this may take a while", "dir", w.wal.Dir())
+	buffer.Logger.LogInfo(w.logger, "msg", "replaying WAL, this may take a while", "dir", w.wal.Dir())
 	dir, startFrom, err := wlog.LastCheckpoint(w.wal.Dir())
 	if err != nil && err != record.ErrNotFound {
 		return fmt.Errorf("find last checkpoint: %w", err)
@@ -233,7 +234,7 @@ func (w *Storage) replayWAL() error {
 			return fmt.Errorf("backfill checkpoint: %w", err)
 		}
 		startFrom++
-		level.Info(w.logger).Log("msg", "WAL checkpoint loaded")
+		buffer.Logger.LogInfo(w.logger, "msg", "WAL checkpoint loaded")
 	}
 
 	// Find the last segment.
@@ -257,7 +258,7 @@ func (w *Storage) replayWAL() error {
 		if err != nil {
 			return err
 		}
-		level.Info(w.logger).Log("msg", "WAL segment loaded", "segment", i, "maxSegment", last)
+		buffer.Logger.LogInfo(w.logger, "msg", "WAL segment loaded", "segment", i, "maxSegment", last)
 	}
 
 	return nil

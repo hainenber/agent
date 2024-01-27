@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	agent_service "github.com/grafana/agent/service"
 	flow_service "github.com/grafana/agent/service"
 	"github.com/prometheus/client_golang/prometheus"
@@ -225,7 +225,7 @@ func (s *service) CheckAndRemoveStaleMarkers() {
 	defer s.mut.Unlock()
 
 	s.lastStaleCheck.Set(float64(time.Now().Unix()))
-	level.Debug(s.log).Log("msg", "labelstore removing stale markers")
+	buffer.Logger.LogDebug(s.log, "msg", "labelstore removing stale markers")
 	curr := time.Now()
 	idsToBeGCed := make([]*staleMarker, 0)
 	for _, stale := range s.staleGlobals {
@@ -236,7 +236,7 @@ func (s *service) CheckAndRemoveStaleMarkers() {
 		idsToBeGCed = append(idsToBeGCed, stale)
 	}
 
-	level.Debug(s.log).Log("msg", "number of ids to remove", "count", len(idsToBeGCed))
+	buffer.Logger.LogDebug(s.log, "msg", "number of ids to remove", "count", len(idsToBeGCed))
 
 	for _, marker := range idsToBeGCed {
 		delete(s.staleGlobals, marker.globalID)

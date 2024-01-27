@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/service/cluster"
 	"github.com/grafana/ckit/advertise"
 	"github.com/hashicorp/go-discover"
@@ -68,7 +68,7 @@ func buildClusterService(opts clusterOptions) (*cluster.Service, error) {
 			}
 			addr, err := advertise.FirstAddress(advertiseInterfaces)
 			if err != nil {
-				level.Warn(opts.Log).Log("msg", "could not find advertise address using network interfaces", opts.AdvertiseInterfaces,
+				buffer.Logger.LogWarn(opts.Log, "msg", "could not find advertise address using network interfaces", opts.AdvertiseInterfaces,
 					"falling back to localhost", "err", err)
 			} else if addr.Is4() {
 				advertiseAddress = fmt.Sprintf("%s:%d", addr.String(), listenPort)

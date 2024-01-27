@@ -17,7 +17,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/grafana/agent/component"
 	"github.com/grafana/agent/pkg/flow"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/pkg/server"
 	"github.com/grafana/agent/service"
 	"github.com/grafana/ckit/memconn"
@@ -185,8 +185,8 @@ func (s *Service) Run(ctx context.Context, host service.Host) error {
 
 	if s.opts.ReloadFunc != nil {
 		r.HandleFunc("/-/reload", func(w http.ResponseWriter, _ *http.Request) {
-			level.Info(s.log).Log("msg", "reload requested via /-/reload endpoint")
-			defer level.Info(s.log).Log("msg", "config reloaded")
+			buffer.Logger.LogInfo(s.log, "msg", "reload requested via /-/reload endpoint")
+			defer buffer.Logger.LogInfo(s.log, "msg", "config reloaded")
 
 			_, err := s.opts.ReloadFunc()
 			if err != nil {
@@ -208,7 +208,7 @@ func (s *Service) Run(ctx context.Context, host service.Host) error {
 
 	srv := &http.Server{Handler: h2c.NewHandler(r, &http2.Server{})}
 
-	level.Info(s.log).Log("msg", "now listening for http traffic", "addr", s.opts.HTTPListenAddr)
+	buffer.Logger.LogInfo(s.log, "msg", "now listening for http traffic", "addr", s.opts.HTTPListenAddr)
 
 	listeners := []net.Listener{s.publicLis, s.memLis}
 	for _, lis := range listeners {
@@ -218,7 +218,7 @@ func (s *Service) Run(ctx context.Context, host service.Host) error {
 			defer cancel()
 
 			if err := srv.Serve(lis); err != nil {
-				level.Info(s.log).Log("msg", "http server closed", "addr", lis.Addr(), "err", err)
+				buffer.Logger.LogInfo(s.log, "msg", "http server closed", "addr", lis.Addr(), "err", err)
 			}
 		}(lis)
 	}
@@ -315,14 +315,14 @@ func (s *Service) Update(newConfig any) error {
 		}
 
 		newTLSListener := tls.NewListener(s.tcpLis, tlsConfig)
-		level.Info(s.log).Log("msg", "applying TLS config to HTTP server")
+		buffer.Logger.LogInfo(s.log, "msg", "applying TLS config to HTTP server")
 		if err := s.publicLis.SetInner(newTLSListener); err != nil {
 			return err
 		}
 	} else {
 		// Ensure that the outer lazy listener is sending requests directly to the
 		// network, instead of any previous instance of a TLS listener.
-		level.Info(s.log).Log("msg", "applying non-TLS config to HTTP server")
+		buffer.Logger.LogInfo(s.log, "msg", "applying non-TLS config to HTTP server")
 		if err := s.publicLis.SetInner(s.tcpLis); err != nil {
 			return err
 		}

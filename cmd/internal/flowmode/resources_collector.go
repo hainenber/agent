@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/shirou/gopsutil/v3/process"
@@ -84,7 +84,7 @@ func (rc *resourcesCollector) Describe(ch chan<- *prometheus.Desc) {
 func (rc *resourcesCollector) Collect(ch chan<- prometheus.Metric) {
 	proc, err := process.NewProcess(int32(os.Getpid()))
 	if err != nil {
-		level.Error(rc.log).Log("msg", "failed to get process", "err", err)
+		buffer.Logger.LogError(rc.log, "msg", "failed to get process", "err", err)
 		return
 	}
 
@@ -153,5 +153,5 @@ func (rc *resourcesCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (rc *resourcesCollector) reportError(d *prometheus.Desc, err error) {
-	level.Error(rc.log).Log("msg", "failed to collect resources metric", "name", d.String(), "err", err)
+	buffer.Logger.LogError(rc.log, "msg", "failed to collect resources metric", "name", d.String(), "err", err)
 }

@@ -53,7 +53,7 @@ import (
 	"github.com/grafana/agent/pkg/flow/internal/controller"
 	"github.com/grafana/agent/pkg/flow/internal/worker"
 	"github.com/grafana/agent/pkg/flow/logging"
-	"github.com/grafana/agent/pkg/flow/logging/level"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/pkg/flow/tracing"
 	"github.com/grafana/agent/service"
 	"github.com/prometheus/client_golang/prometheus"
@@ -161,7 +161,7 @@ func newController(o controllerOptions) *Flow {
 	}
 
 	if workerPool == nil {
-		level.Info(log).Log("msg", "no worker pool provided, creating a default pool", "controller", o.ControllerID)
+		buffer.Logger.LogInfo(log, "msg", "no worker pool provided, creating a default pool", "controller", o.ControllerID)
 		workerPool = worker.NewDefaultWorkerPool()
 	}
 
@@ -228,7 +228,7 @@ func newController(o controllerOptions) *Flow {
 func (f *Flow) Run(ctx context.Context) {
 	defer func() { _ = f.sched.Close() }()
 	defer f.loader.Cleanup(!f.opts.IsModule)
-	defer level.Debug(f.log).Log("msg", "flow controller exiting")
+	defer buffer.Logger.LogDebug(f.log, "msg", "flow controller exiting")
 
 	for {
 		select {
@@ -242,7 +242,7 @@ func (f *Flow) Run(ctx context.Context) {
 			all := f.updateQueue.DequeueAll()
 			f.loader.EvaluateDependants(ctx, all)
 		case <-f.loadFinished:
-			level.Info(f.log).Log("msg", "scheduling loaded components and services")
+			buffer.Logger.LogInfo(f.log, "msg", "scheduling loaded components and services")
 
 			var (
 				components = f.loader.Components()
@@ -264,7 +264,7 @@ func (f *Flow) Run(ctx context.Context) {
 
 			err := f.sched.Synchronize(runnables)
 			if err != nil {
-				level.Error(f.log).Log("msg", "failed to load components and services", "err", err)
+				buffer.Logger.LogError(f.log, "msg", "failed to load components and services", "err", err)
 			}
 		}
 	}

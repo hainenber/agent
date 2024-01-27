@@ -10,6 +10,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/grafana/agent/pkg/flow/internal/dag"
 	"github.com/grafana/agent/pkg/flow/internal/worker"
+	"github.com/grafana/agent/pkg/flow/logging/buffer"
 	"github.com/grafana/agent/pkg/flow/logging/level"
 	"github.com/grafana/agent/pkg/flow/tracing"
 	"github.com/grafana/agent/service"
@@ -147,41 +148,11 @@ func (l *Loader) Apply(args map[string]any, componentBlocks []*ast.BlockStmt, co
 	logger := log.With(l.log, "trace_id", span.SpanContext().TraceID())
 	defer func() {
 		span.SetStatus(codes.Ok, "")
-
-		level.Info(logger).Log("msg", "finished complete graph evaluation", "duration", time.Since(start))
+		buffer.Logger.LogInfo(logger, "msg", "finished complete graph evaluation", "duration", time.Since(start))
 	}()
 
 	l.cache.ClearModuleExports()
 
-	// Prioritize evaluate the logging block to ensure logging format conformity
-	for _, leave := range newGraph.Leaves() {
-		if leave.NodeID() != "logging" {
-			continue
-		}
-
-		n := leave.(BlockNode)
-
-		_, span := tracer.Start(spanCtx, "EvaluateNode", trace.WithSpanKind(trace.SpanKindInternal))
-		span.SetAttributes(attribute.String("node_id", n.NodeID()))
-		if err := l.evaluate(logger, n); err != nil {
-			diags.Add(diag.Diagnostic{
-				Severity: diag.SeverityLevelError,
-				Message:  fmt.Sprintf("Failed to evaluate node for config block: %s", err),
-				StartPos: ast.StartPos(n.Block()).Position(),
-				EndPos:   ast.EndPos(n.Block()).Position(),
-			})
-			span.SetStatus(codes.Error, err.Error())
-		}
-		if exp, ok := n.(*ExportConfigNode); ok {
-			l.cache.CacheModuleExportValue(exp.Label(), exp.Value())
-		}
-		level.Info(logger).Log("msg", "finished node evaluation", "node_id", n.NodeID(), "duration", time.Since(start))
-		span.SetStatus(codes.Ok, "")
-	}
-
-	level.Info(logger).Log("msg", "starting complete graph evaluation")
-
-	// Evaluate all the components.
 	_ = dag.WalkTopological(&newGraph, newGraph.Leaves(), func(n dag.Node) error {
 		_, span := tracer.Start(spanCtx, "EvaluateNode", trace.WithSpanKind(trace.SpanKindInternal))
 		span.SetAttributes(attribute.String("node_id", n.NodeID()))
@@ -189,7 +160,7 @@ func (l *Loader) Apply(args map[string]any, componentBlocks []*ast.BlockStmt, co
 
 		start := time.Now()
 		defer func() {
-			level.Info(logger).Log("msg", "finished node evaluation", "node_id", n.NodeID(), "duration", time.Since(start))
+			buffer.Logger.LogInfo(logger, "msg", "finished node evaluation", "node_id", n.NodeID(), "duration", time.Since(start))
 		}()
 
 		var err error
